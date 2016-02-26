@@ -1,0 +1,10 @@
+{
+  "applications": {
+    "EduzenReader": {
+      "applicationId": "J7vtX8g1h40K0wJmIeOj2nxEwhMvr8fY9W2P2K0o"
+    },
+    "_default": {
+      "link": "EduzenReader"
+    }
+  }
+}

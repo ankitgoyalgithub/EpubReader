@@ -431,16 +431,12 @@ function saveNoteEnter(obj, event){
 							});
 							epubBook = ePub(book.get("bookUrl"));
 							mybook = book;
-							//bookId = book.id;
 							$(".col-md-12").toggle("slow");
 							$(".container-epub").toggle("slow");
 							$("body").removeClass("page-full-width");
 							rendered = epubBook.renderTo("area");
 							// epubBook.renderTo("area");
 							$("#my-library-title").remove();
-							if($( window ).width() <= 480){
-								//$(".top-menu").css("display","none");
-							}
 
               $('.page-sidebar-menu').on('click','.slider-options',function(event){
                 var id = '#'+this.id;
@@ -471,7 +467,6 @@ function saveNoteEnter(obj, event){
 							//Functionalities for Notes/Highlight
 
         epubBook.ready.all.then(function() {
-
 						    iframe = $("iframe")[0];
                 highlighter = rangy.createHighlighter(iframe.contentWindow);
 
@@ -554,7 +549,7 @@ function saveNoteEnter(obj, event){
 
 						    Highlight = Parse.Object.extend("Highlight");
 						    var highlightQuery=new Parse.Query(Highlight);
-                
+
 						    highlightQuery.equalTo("userId", Parse.User.current());
 						    highlightQuery.equalTo("Book", mybook);
 						    highlightQuery.find({
@@ -578,114 +573,108 @@ function saveNoteEnter(obj, event){
 						        alert('Error: ' + error.code + ' ' + error.message);
 						      }
 						    });
-              });
+          });
 
 			    epubBook.pageListReady.then(function(pageList){
-           rendered.then(function(){
-               var currentLocation = epubBook.getCurrentLocationCfi();
-               var currentPage = epubBook.pagination.pageFromCfi(currentLocation);
-              // slider.value = currentPage;
-               currentPage.value = currentPage;
-               console.log(currentPage);
+             rendered.then(function(){
+                 var currentLocation = epubBook.getCurrentLocationCfi();
+                 var currentPage = epubBook.pagination.pageFromCfi(currentLocation);
+                 currentPage.value = currentPage;
+             });
+             currentPage.addEventListener("change", function(){
+                 epubBook.gotoPage(currentPage.value);
+             }, false);
+          });
 
-           });
-           currentPage.addEventListener("change", function(){
-               epubBook.gotoPage(currentPage.value);
-           }, false);
-         });
+          epubBook.on('book:pageChanged', function(location){
+         	    $(".page-number-display").text(location.anchorPage);
+              $("#progress").width(location.percentage*100+'%');
+          });
 
-         epubBook.on('book:pageChanged', function(location){
-         	$(".page-number-display").text(location.anchorPage);
-             $("#progress").width(location.percentage*100+'%');
-             console.log(location.pageRange)
-         });
+          epubBook.on('renderer:chapterDisplayed', function(locationCfi){
+              if($('.sidebar-list-background')){
+                  $('.sidebar-list-background').removeClass('sidebar-list-background');
+              }
 
-         epubBook.on('renderer:chapterDisplayed', function(locationCfi){
-             if($('.sidebar-list-background')){
-                 $('.sidebar-list-background').removeClass('sidebar-list-background');
-             }
+              locationCfi = locationCfi || epubBook.currentChapter;
+              $('#'+locationCfi.href.split('.')[0]).addClass('sidebar-list-background');
 
-             $('#'+locationCfi.href.split('.')[0]).addClass('sidebar-list-background');
-
-             if(bookmarks.length !== 0){
-						     bookmarks.forEach(function(bookmarkItem){
+              if(bookmarks.length !== 0){
+						      bookmarks.forEach(function(bookmarkItem){
 							       if(bookmarkItem.chapterHref === epubBook.currentChapter.href)
                      {
 							      	//MArk page as bookmarked
 							       }
-							   });
-				     }
+							    });
+				      }
 
-             if(notes.length !== 0){
-				         notes.forEach(function(noteItem)
-                 {
-				             if(noteItem.chapterHref === epubBook.currentChapter.href && JSON.stringify(currentNote) !== JSON.stringify(noteItem) )
-                     {
+              if(notes.length !== 0){
+				          notes.forEach(function(noteItem)
+                  {
+				              if(noteItem.chapterHref === epubBook.currentChapter.href && JSON.stringify(currentNote) !== JSON.stringify(noteItem) )
+                      {
+                          var iframe=$("iframe")[0];
+                          var x=noteItem.wordRange;
+      		        			  var el = document.createElement("span");
+
+                          el.style.backgroundColor = "yellow";
+						              el.id="r";
+          					      y = rangy.getSelection(iframe).removeAllRanges();
+          					      myrange=rangy.getSelection(iframe).restoreCharacterRanges(iframe.contentWindow.document.childNodes[1], x);
+
+            						  if(myrange.toHtml().match(/green/)){
+            						      el.textContent = myrange.toString();
+            							    myrange.extractContents();
+            							    myrange.insertNode(el);
+            							    return;
+            						  }
+            						  if(myrange.canSurroundContents(el)){
+            						 	   myrange.surroundContents(el);
+            						  }
+				             }
+        				     else if(currentNote && currentNote.chapterHref === epubBook.currentChapter.href && JSON.stringify(currentNote) === JSON.stringify(noteItem)){
+                         var x=currentNote.wordRange;
                          var iframe=$("iframe")[0];
-                         var x=noteItem.wordRange;
-      		      			   var el = document.createElement("span");
+        		      	 	   var el = document.createElement("span");
 
-                         el.style.backgroundColor = "yellow";
-						             el.id="r";
+        		      			 el.id="r";
+        						     el.style.backgroundColor = "green";
+        						     myrange=rangy.getSelection(iframe).restoreCharacterRanges(iframe.contentWindow.document.childNodes[1], x);
+        						     el.textContent = myrange.toString();
+        						     myrange.extractContents();
 
-          					     y = rangy.getSelection(iframe).removeAllRanges();
-          					     myrange=rangy.getSelection(iframe).restoreCharacterRanges(iframe.contentWindow.document.childNodes[1], x);
-
-            						 if(myrange.toHtml().match(/green/)){
-            						     el.textContent = myrange.toString();
-            							   myrange.extractContents();
-            							   myrange.insertNode(el);
-            							   return;
-            						 }
             						 if(myrange.canSurroundContents(el)){
-            						 	  myrange.surroundContents(el);
+            						     myrange.insertNode(el);
             						 }
-				            }
-        				    else if(currentNote && currentNote.chapterHref === epubBook.currentChapter.href && JSON.stringify(currentNote) === JSON.stringify(noteItem)){
-                        var x=currentNote.wordRange;
-                        var iframe=$("iframe")[0];
-        		      			var el = document.createElement("span");
-
-        		      			el.id="r";
-        						    el.style.backgroundColor = "green";
-        						    myrange=rangy.getSelection(iframe).restoreCharacterRanges(iframe.contentWindow.document.childNodes[1], x);
-        						    el.textContent = myrange.toString();
-        						    myrange.extractContents();
-
-            						if(myrange.canSurroundContents(el)){
-            							myrange.insertNode(el);
-            						}
-        						    currentNote = null;
-        					 }
+        						     currentNote = null;
+        					   }
 				     });
-				}
+				  }
 
-        if(highlights.length !== 0)
-        {
-          highlights.forEach(function(highlightItem){
-				        if(highlightItem.chapterHref === epubBook.currentChapter.href)
-                {
-				      	       var el = document.createElement("span");
-								       el.style.backgroundColor = "yellow";
-								       var iframe=$("iframe")[0];
-								       var x=highlightItem.wordRange;
-								       myrange=rangy.getSelection(iframe).restoreCharacterRanges(iframe.contentWindow.document.childNodes[1], x);
+          if(highlights.length !== 0) {
+              highlights.forEach(function(highlightItem){
+  				         if(highlightItem.chapterHref === epubBook.currentChapter.href)
+                   {
+                         var classApplierModule = rangy.modules.ClassApplier;
+                         if (rangy.supported && classApplierModule && classApplierModule.supported) {
+                             highlightResultApplier = rangy.createClassApplier("highlight");
+                         }
+  				      	       var el = document.createElement("span");
+  								       el.style.backgroundColor = "yellow";
+  								       var iframe=$("iframe")[0];
+  								       var x=highlightItem.wordRange;
+  								       myrange=rangy.getSelection(iframe).restoreCharacterRanges(iframe.contentWindow.document.childNodes[1], x);
+                         highlightResultApplier.applyToRange(myrange);
+                         highlightedElements = iframe.contentDocument.body.getElementsByClassName('highlight');
 
-                       if(myrange.canSurroundContents(el))
-                       {
-									         myrange.surroundContents(el);
-								       }
-                       else if(typeof myrange.toString() === 'string')
-                       {
-                          el.textContent = myrange.toString();
-            							myrange.extractContents();
-            							myrange.insertNode(el);
-            							return;
-                       }
-				       }
-				  });
-				}
-			});
+                         for(var i=0; i<highlightedElements.length; i++)
+                         {
+                           highlightedElements[i].style.backgroundColor='yellow';
+                         }
+  				         }
+  				    });
+  				  }
+			  });
 
       // new code
         if (serializedHighlights) {
@@ -697,7 +686,7 @@ function saveNoteEnter(obj, event){
         }
 
         function noteSelectedText() {
-            highlighter.highlightSelection("note");
+            highlighter.highlightSelection("note",{ selection: rangy.getSelection(iframe.contentDocument) });
         }
 
         function removeHighlightFromSelectedText() {
@@ -816,7 +805,17 @@ function saveNoteEnter(obj, event){
 			      	noteText:$("#noteText").val()
 			      });
 						$('#myNotes').append("<li><a id='"+epubBook.getCurrentLocationCfi()+"'>"+$("#noteText").val()+"</a></li>");
-			      var range = selection.getRangeAt(0);
+
+            highlightSelectedText();
+            highlightedElements = iframe.contentDocument.body.getElementsByClassName('highlight');
+
+            for(var i=0; i<highlightedElements.length; i++)
+            {
+              highlightedElements[i].style.backgroundColor='green';
+            }
+
+
+			      /*var range = selection.getRangeAt(0);
 			      var el = document.createElement('span');
 			      el.id="r";
 			      el.style.backgroundColor = 'yellow';
@@ -824,7 +823,7 @@ function saveNoteEnter(obj, event){
 			          range.surroundContents(el);
 			      } else {
 			          bootbox.alert("Unable to add Note");
-			      }
+			      }*/
 			  });
 
 			  $("body").on('click','#saveBookMark',function(){
@@ -912,12 +911,9 @@ function saveNoteEnter(obj, event){
 
             $('#myHighlights').append("<li><a id='"+epubBook.getCurrentLocationCfi()+"'>"+selection.toString()+"</a></li>");
 
-            var range = selection.getRangeAt(0);
-			      var el = document.createElement('span');
-
-            el.style.backgroundColor = 'yellow';
             highlightSelectedText();
             highlightedElements = iframe.contentDocument.body.getElementsByClassName('highlight');
+
             for(var i=0; i<highlightedElements.length; i++)
             {
               highlightedElements[i].style.backgroundColor='yellow';
